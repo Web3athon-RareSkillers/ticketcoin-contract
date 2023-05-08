@@ -37,6 +37,38 @@ describe("ticketcoin-contract", () => {
       )[0];
     };
 
+    const getUseAuthority = async (
+      mint: anchor.web3.PublicKey,
+      verifier: anchor.web3.PublicKey
+    ): Promise<anchor.web3.PublicKey> => {
+      return (
+        await anchor.web3.PublicKey.findProgramAddress(
+          [
+            Buffer.from("metadata"),
+            TOKEN_METADATA_PROGRAM_ID.toBuffer(),
+            mint.toBuffer(),
+            Buffer.from("user"),
+            verifier.toBuffer()
+          ],
+          TOKEN_METADATA_PROGRAM_ID
+        )
+      )[0];
+    };
+
+    const getBurner = async (
+    ): Promise<anchor.web3.PublicKey> => {
+      return (
+        await anchor.web3.PublicKey.findProgramAddress(
+          [
+            Buffer.from("metadata"),
+            program.programId.toBuffer(),
+            Buffer.from("burn")
+          ],
+          TOKEN_METADATA_PROGRAM_ID
+        )
+      )[0];
+    };
+
     const getMasterEdition = async (
       mint: anchor.web3.PublicKey
     ): Promise<anchor.web3.PublicKey> => {
@@ -52,6 +84,8 @@ describe("ticketcoin-contract", () => {
         )
       )[0];
     };
+
+    const verifierKey: anchor.web3.Keypair = anchor.web3.Keypair.generate();
 
     const mintKey: anchor.web3.Keypair = anchor.web3.Keypair.generate();
     const NftTokenAccount = await getAssociatedTokenAddress(
@@ -93,9 +127,13 @@ describe("ticketcoin-contract", () => {
 
     const metadataAddress = await getMetadata(mintKey.publicKey);
     const masterEdition = await getMasterEdition(mintKey.publicKey);
+    const authorityRecord = await getUseAuthority(mintKey.publicKey, verifierKey.publicKey);
+    const burnerAddress = await getBurner();
 
     console.log("Metadata address: ", metadataAddress.toBase58());
     console.log("MasterEdition: ", masterEdition.toBase58());
+    console.log("AuthorityRecord: ", authorityRecord.toBase58());
+    console.log("burner: ", burnerAddress.toBase58());
 
     /*console.log(wallet.publicKey.toBase58());
     console.log(mintKey.publicKey.toBase58());
@@ -124,6 +162,9 @@ describe("ticketcoin-contract", () => {
         systemProgram: SystemProgram.programId,
         rent: anchor.web3.SYSVAR_RENT_PUBKEY,
         masterEdition: masterEdition,
+        useAuthorityRecord: authorityRecord,
+        verifier: verifierKey.publicKey,
+        burner: burnerAddress,
       },
       )
       .rpc();

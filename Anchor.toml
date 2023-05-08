@@ -2,7 +2,10 @@
 seeds = false
 skip-lint = false
 [programs.devnet]
-ticketcoin_contract = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+ticketcoin_contract = "69YpUBXmA97Lhjy21Wm4chkzkbh4SjwAFaHfNnNr8iJv"
+
+[programs.localnet]
+ticketcoin_contract = "69YpUBXmA97Lhjy21Wm4chkzkbh4SjwAFaHfNnNr8iJv"
 
 [registry]
 url = "https://api.apr.dev"

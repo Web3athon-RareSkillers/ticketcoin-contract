@@ -4,10 +4,12 @@ use anchor_spl::token;
 use anchor_spl::token::{MintTo, Token};
 use mpl_token_metadata::{instruction::{create_master_edition_v3, create_metadata_accounts_v3}, state::{Uses, UseMethod}};
 
-declare_id!("9zxQhUqS95pLae8nf9kwN8WogskFbjyZ2DxSUwoQAH9m");
+declare_id!("69YpUBXmA97Lhjy21Wm4chkzkbh4SjwAFaHfNnNr8iJv");
 
 #[program]
 pub mod ticketcoin_contract {
+    use mpl_token_metadata::instruction::approve_use_authority;
+
     use super::*;
 
     pub fn mint_nft(
@@ -102,6 +104,39 @@ pub mod ticketcoin_contract {
             master_edition_infos.as_slice(),
         )?;
         msg!("Master Edition Nft Minted !!!");
+
+        msg!("Approve new Use Authority");
+        let (burner, _) = mpl_token_metadata::pda::find_program_as_burner_account();
+        
+        
+        let authority_info = vec![
+            ctx.accounts.use_authority_record.to_account_info(),
+            ctx.accounts.payer.to_account_info(),
+            ctx.accounts.payer.to_account_info(),
+            ctx.accounts.verifier.to_account_info(),
+            ctx.accounts.metadata.to_account_info(),
+            ctx.accounts.mint.to_account_info(),
+            ctx.accounts.burner.to_account_info(),
+            ctx.accounts.token_metadata_program.to_account_info(),
+            ctx.accounts.token_program.to_account_info(),
+            ctx.accounts.system_program.to_account_info(),
+            ctx.accounts.rent.to_account_info(),
+        ];
+        invoke(
+            &approve_use_authority(
+                ctx.accounts.token_metadata_program.key(),
+                ctx.accounts.use_authority_record.key(),
+                ctx.accounts.verifier.key(),
+                ctx.accounts.payer.key(),
+                ctx.accounts.payer.key(),
+                ctx.accounts.token_account.key(),
+                ctx.accounts.metadata.key(),
+                ctx.accounts.mint.key(),
+                ctx.accounts.verifier.key(),
+                1
+            ),
+            authority_info.as_slice(),
+        )?;
 
         Ok(())
     }
@@ -230,6 +265,19 @@ pub struct MintNFT<'info> {
     /// CHECK: This is not dangerous because we don't read or write from this account
     #[account(mut)]
     pub master_edition: UncheckedAccount<'info>,
+
+    /// CHECK: To avoid error
+    #[account(mut)]
+    pub use_authority_record: AccountInfo<'info>,
+
+    /// CHECK: To avoid error
+    #[account(mut)]
+    pub verifier: AccountInfo<'info>,
+
+    /// CHECK: To avoid error
+    #[account(mut)]
+    pub burner: AccountInfo<'info>,
+
 }
 
 
