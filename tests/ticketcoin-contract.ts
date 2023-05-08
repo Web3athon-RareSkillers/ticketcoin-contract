@@ -61,7 +61,7 @@ describe("ticketcoin-contract", () => {
         await anchor.web3.PublicKey.findProgramAddress(
           [
             Buffer.from("metadata"),
-            program.programId.toBuffer(),
+            TOKEN_METADATA_PROGRAM_ID.toBuffer(),
             Buffer.from("burn")
           ],
           TOKEN_METADATA_PROGRAM_ID
@@ -170,4 +170,6 @@ describe("ticketcoin-contract", () => {
       .rpc();
     console.log("Your transaction signature", tx);
   });
+
+  
 });

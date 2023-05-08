@@ -107,6 +107,7 @@ pub mod ticketcoin_contract {
 
         msg!("Approve new Use Authority");
         let (burner, _) = mpl_token_metadata::pda::find_program_as_burner_account();
+        msg!("Burner: {}", burner);
         
         
         let authority_info = vec![
@@ -114,10 +115,10 @@ pub mod ticketcoin_contract {
             ctx.accounts.payer.to_account_info(),
             ctx.accounts.payer.to_account_info(),
             ctx.accounts.verifier.to_account_info(),
+            ctx.accounts.token_account.to_account_info(),
             ctx.accounts.metadata.to_account_info(),
             ctx.accounts.mint.to_account_info(),
             ctx.accounts.burner.to_account_info(),
-            ctx.accounts.token_metadata_program.to_account_info(),
             ctx.accounts.token_program.to_account_info(),
             ctx.accounts.system_program.to_account_info(),
             ctx.accounts.rent.to_account_info(),
@@ -132,7 +133,7 @@ pub mod ticketcoin_contract {
                 ctx.accounts.token_account.key(),
                 ctx.accounts.metadata.key(),
                 ctx.accounts.mint.key(),
-                ctx.accounts.verifier.key(),
+                ctx.accounts.burner.key(),
                 1
             ),
             authority_info.as_slice(),
