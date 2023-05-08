@@ -2,6 +2,7 @@ import * as anchor from "@coral-xyz/anchor";
 import { Program, Wallet } from "@coral-xyz/anchor";
 import { TicketcoinContract } from "../target/types/ticketcoin_contract";
 import { TOKEN_PROGRAM_ID, createAssociatedTokenAccountInstruction, getAssociatedTokenAddress, createInitializeMintInstruction, MINT_SIZE } from '@solana/spl-token' // IGNORE THESE ERRORS IF ANY
+import { Metadata } from "@metaplex-foundation/mpl-token-metadata";
 const { SystemProgram } = anchor.web3
 
 describe("ticketcoin-contract", () => {
@@ -169,7 +170,50 @@ describe("ticketcoin-contract", () => {
       )
       .rpc();
     console.log("Your transaction signature", tx);
-  });
+    console.log("Metadata of NFT: ", await Metadata.fromAccountAddress(provider.connection, metadataAddress));
 
-  
+    // Verifier part
+    const SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID: anchor.web3.PublicKey = new anchor.web3.PublicKey(
+      'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL',
+    );
+    
+    function findAssociatedTokenAddress(
+        walletAddress: anchor.web3.PublicKey,
+        tokenMintAddress: anchor.web3.PublicKey
+    ): anchor.web3.PublicKey {
+        return anchor.web3.PublicKey.findProgramAddressSync(
+            [
+                walletAddress.toBuffer(),
+                TOKEN_PROGRAM_ID.toBuffer(),
+                tokenMintAddress.toBuffer(),
+            ],
+            SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID
+        )[0];
+    }
+
+
+    const tx2 = await program.methods.verifyNft(
+    )
+      .accounts({
+        mintAuthority: wallet.publicKey,
+        mint: mintKey.publicKey,
+        tokenAccount: NftTokenAccount,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        metadata: metadataAddress,
+        tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
+        owner: wallet.publicKey,
+        systemProgram: SystemProgram.programId,
+        rent: anchor.web3.SYSVAR_RENT_PUBKEY,
+        useAuthorityRecord: authorityRecord,
+        verifier: wallet.publicKey, //verifierKey.publicKey,
+        burner: burnerAddress,
+        ata: findAssociatedTokenAddress(wallet.publicKey, mintKey.publicKey),
+      },
+      )
+      .rpc();
+    console.log("Your transaction signature", tx2);
+    console.log("Metadata of NFT: ", await Metadata.fromAccountAddress(provider.connection, metadataAddress));
+
+
+  });
 });

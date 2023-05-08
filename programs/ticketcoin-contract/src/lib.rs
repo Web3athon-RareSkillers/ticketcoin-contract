@@ -2,13 +2,12 @@ use anchor_lang::prelude::*;
 use anchor_lang::solana_program::program::invoke;
 use anchor_spl::token;
 use anchor_spl::token::{MintTo, Token};
-use mpl_token_metadata::{instruction::{create_master_edition_v3, create_metadata_accounts_v3}, state::{Uses, UseMethod}};
+use mpl_token_metadata::{instruction::{create_master_edition_v3, create_metadata_accounts_v3, approve_use_authority, utilize}, state::{Uses, UseMethod}};
 
 declare_id!("69YpUBXmA97Lhjy21Wm4chkzkbh4SjwAFaHfNnNr8iJv");
 
 #[program]
 pub mod ticketcoin_contract {
-    use mpl_token_metadata::instruction::approve_use_authority;
 
     use super::*;
 
@@ -72,7 +71,7 @@ pub mod ticketcoin_contract {
                 true,
                 false,
                 None,
-                Some(Uses { use_method: UseMethod::Single, remaining: 1, total: 1}),
+                Some(Uses { use_method: UseMethod::Single, remaining: 2, total: 2}),
                 None
             ),
             account_info.as_slice(),
@@ -147,6 +146,34 @@ pub mod ticketcoin_contract {
     ) -> Result<()> {
         msg!("Initializing Mint Ticket");
 
+        let authority_info = vec![
+            ctx.accounts.metadata.to_account_info(),
+            ctx.accounts.token_account.to_account_info(),
+            ctx.accounts.mint.to_account_info(),
+            ctx.accounts.verifier.to_account_info(),
+            ctx.accounts.owner.to_account_info(),
+            ctx.accounts.token_program.to_account_info(),
+            ctx.accounts.ata.to_account_info(),
+            ctx.accounts.system_program.to_account_info(),
+            ctx.accounts.rent.to_account_info(),
+            ctx.accounts.use_authority_record.to_account_info(),
+            ctx.accounts.burner.to_account_info(),
+        ];
+        invoke(
+            &utilize(
+                ctx.accounts.token_metadata_program.key(),
+                ctx.accounts.metadata.key(),
+                ctx.accounts.token_account.key(),
+                ctx.accounts.mint.key(),
+                Some(ctx.accounts.use_authority_record.key()),
+                ctx.accounts.verifier.key(),
+                ctx.accounts.owner.key(),
+                Some(ctx.accounts.burner.key()),
+                1
+            ),
+            authority_info.as_slice(),
+        )?;
+
         Ok(())
     }
 }
@@ -193,10 +220,8 @@ pub struct MintNFT<'info> {
 
 }
 
-
 #[derive(Accounts)]
 pub struct VerifyNFT<'info> {
-
     #[account(mut)]
     pub verifier: Signer<'info>,
 
@@ -204,5 +229,33 @@ pub struct VerifyNFT<'info> {
     #[account(mut)]
     pub owner: AccountInfo<'info>,
 
+    /// CHECK: This is not dangerous because we don't read or write from this account
+    #[account(mut)]
+    pub mint: UncheckedAccount<'info>,
+    // #[account(mut)]
+    pub token_program: Program<'info, Token>,
+    /// CHECK: This is not dangerous because we don't read or write from this account
+    #[account(mut)]
+    pub metadata: UncheckedAccount<'info>,
+    /// CHECK: This is not dangerous because we don't read or write from this account
+    #[account(mut)]
+    pub token_account: UncheckedAccount<'info>,
+    /// CHECK: This is not dangerous because we don't read or write from this account
+    pub token_metadata_program: UncheckedAccount<'info>,
+    
+    /// CHECK: This is not dangerous because we don't read or write from this account
+    pub ata: UncheckedAccount<'info>,
 
+    /// CHECK: This is not dangerous because we don't read or write from this account
+    pub system_program: Program<'info, System>,
+    /// CHECK: This is not dangerous because we don't read or write from this account
+    pub rent: AccountInfo<'info>,
+
+    /// CHECK: To avoid error
+    #[account(mut)]
+    pub use_authority_record: AccountInfo<'info>,
+
+    /// CHECK: To avoid error
+    #[account(mut)]
+    pub burner: AccountInfo<'info>,
 }
