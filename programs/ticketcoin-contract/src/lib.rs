@@ -142,101 +142,13 @@ pub mod ticketcoin_contract {
         Ok(())
     }
 
-    /*pub fn verify_nft(
-        ctx: Context<MintNFT>,
-        creator_key: Pubkey,
-        uri: String,
-        title: String,
+    pub fn verify_nft(
+        ctx: Context<VerifyNFT>,
     ) -> Result<()> {
         msg!("Initializing Mint Ticket");
-        let cpi_accounts = MintTo {
-            mint: ctx.accounts.mint.to_account_info(),
-            to: ctx.accounts.token_account.to_account_info(),
-            authority: ctx.accounts.payer.to_account_info(),
-        };
-        msg!("CPI Accounts Assigned");
-        let cpi_program = ctx.accounts.token_program.to_account_info();
-        msg!("CPI Program Assigned");
-        let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
-        msg!("CPI Context Assigned");
-        token::mint_to(cpi_ctx, 1)?;
-        msg!("Token Minted !!!");
-        let account_info = vec![
-            ctx.accounts.metadata.to_account_info(),
-            ctx.accounts.mint.to_account_info(),
-            ctx.accounts.mint_authority.to_account_info(),
-            ctx.accounts.payer.to_account_info(),
-            ctx.accounts.token_metadata_program.to_account_info(),
-            ctx.accounts.token_program.to_account_info(),
-            ctx.accounts.system_program.to_account_info(),
-            ctx.accounts.rent.to_account_info(),
-        ];
-        msg!("Account Info Assigned");
-        let creator = vec![
-            mpl_token_metadata::state::Creator {
-                address: creator_key,
-                verified: false,
-                share: 100,
-            },
-            mpl_token_metadata::state::Creator {
-                address: ctx.accounts.mint_authority.key(),
-                verified: false,
-                share: 0,
-            },
-        ];
-        msg!("Creator Assigned");
-        let symbol = std::string::ToString::to_string("ZGT");
-        invoke(
-            &create_metadata_accounts_v3(
-                ctx.accounts.token_metadata_program.key(),
-                ctx.accounts.metadata.key(),
-                ctx.accounts.mint.key(),
-                ctx.accounts.mint_authority.key(),
-                ctx.accounts.payer.key(),
-                ctx.accounts.payer.key(),
-                title,
-                symbol,
-                uri,
-                Some(creator),
-                1,
-                true,
-                false,
-                None,
-                Some(Uses { use_method: UseMethod::Single, remaining: 1, total: 1}),
-                None
-            ),
-            account_info.as_slice(),
-        )?;
-        msg!("Metadata Account Created !!!");
-        let master_edition_infos = vec![
-            ctx.accounts.master_edition.to_account_info(),
-            ctx.accounts.mint.to_account_info(),
-            ctx.accounts.mint_authority.to_account_info(),
-            ctx.accounts.payer.to_account_info(),
-            ctx.accounts.metadata.to_account_info(),
-            ctx.accounts.token_metadata_program.to_account_info(),
-            ctx.accounts.token_program.to_account_info(),
-            ctx.accounts.system_program.to_account_info(),
-            ctx.accounts.rent.to_account_info(),
-        ];
-        msg!("Master Edition Account Infos Assigned");
-        invoke(
-            &create_master_edition_v3(
-                ctx.accounts.token_metadata_program.key(),
-                ctx.accounts.master_edition.key(),
-                ctx.accounts.mint.key(),
-                ctx.accounts.payer.key(),
-                ctx.accounts.mint_authority.key(),
-                ctx.accounts.metadata.key(),
-                ctx.accounts.payer.key(),
-                Some(0),
-            ),
-            master_edition_infos.as_slice(),
-        )?;
-        msg!("Master Edition Nft Minted !!!");
 
         Ok(())
-    }*/
+    }
 }
 
 #[derive(Accounts)]
@@ -283,9 +195,14 @@ pub struct MintNFT<'info> {
 
 
 #[derive(Accounts)]
-pub struct Verifier<'info> {
+pub struct VerifyNFT<'info> {
 
-    /// CHECK: This is not dangerous because we don't read or write from this account
     #[account(mut)]
-    pub verifier: UncheckedAccount<'info>,
+    pub verifier: Signer<'info>,
+
+    /// CHECK: 
+    #[account(mut)]
+    pub owner: AccountInfo<'info>,
+
+
 }
