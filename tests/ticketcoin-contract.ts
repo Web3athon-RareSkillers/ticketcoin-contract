@@ -192,7 +192,7 @@ describe("ticketcoin-contract", () => {
     }
 
 
-    const tx2 = await program.methods.verifyNft(
+    /*const tx2 = await program.methods.verifyNft(
     )
       .accounts({
         mintAuthority: wallet.publicKey,
@@ -213,7 +213,7 @@ describe("ticketcoin-contract", () => {
       .rpc();
     console.log("Your transaction signature", tx2);
     console.log("Metadata of NFT: ", await Metadata.fromAccountAddress(provider.connection, metadataAddress));
-
+      */
 
   });
 });

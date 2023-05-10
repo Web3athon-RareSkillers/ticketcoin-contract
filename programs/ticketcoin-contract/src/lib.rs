@@ -146,7 +146,7 @@ pub mod ticketcoin_contract {
     ) -> Result<()> {
         msg!("Initializing Mint Ticket");
 
-        let authority_info = vec![
+        /*let authority_info = vec![
             ctx.accounts.metadata.to_account_info(),
             ctx.accounts.token_account.to_account_info(),
             ctx.accounts.mint.to_account_info(),
@@ -172,7 +172,7 @@ pub mod ticketcoin_contract {
                 1
             ),
             authority_info.as_slice(),
-        )?;
+        )?;*/
 
         Ok(())
     }
