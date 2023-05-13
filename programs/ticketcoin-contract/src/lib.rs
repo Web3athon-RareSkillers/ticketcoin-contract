@@ -41,7 +41,12 @@ pub mod ticketcoin_contract {
             ctx.accounts.rent.to_account_info(),
         ];
         msg!("Account Info Assigned");
-        let creator = vec![
+        let creators = vec![
+            mpl_token_metadata::state::Creator {
+                address: *ctx.program_id,
+                verified: false, // TO IMPROVE TO GET MORE SECURITY
+                share: 0,
+            },
             mpl_token_metadata::state::Creator {
                 address: creator_key,
                 verified: false,
@@ -66,9 +71,9 @@ pub mod ticketcoin_contract {
                 title,
                 symbol,
                 uri,
-                Some(creator),
-                1,
-                true,
+                Some(creators),
+                0,
+                false,
                 false,
                 None,
                 Some(Uses { use_method: UseMethod::Single, remaining: 1, total: 1}),
@@ -144,7 +149,15 @@ pub mod ticketcoin_contract {
     pub fn verify_nft(
         ctx: Context<VerifyNFT>,
     ) -> Result<()> {
-        msg!("Initializing Mint Ticket");
+        // Verify ticket HERE
+
+
+
+
+
+
+        // Set ticket as used
+        msg!("Set Ticket as used");
 
         let authority_info = vec![
             ctx.accounts.metadata.to_account_info(),
@@ -237,12 +250,9 @@ pub struct VerifyNFT<'info> {
     #[account(mut)]
     pub verifier: Signer<'info>,
 
-
     /// CHECK: 
     pub owner: AccountInfo<'info>,
 
-
-    // #[account(mut)]
     pub token_program: Program<'info, Token>,
     /// CHECK: This is not dangerous because we don't read or write from this account
     pub token_metadata_program: UncheckedAccount<'info>,
