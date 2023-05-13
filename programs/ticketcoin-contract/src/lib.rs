@@ -71,7 +71,7 @@ pub mod ticketcoin_contract {
                 true,
                 false,
                 None,
-                Some(Uses { use_method: UseMethod::Single, remaining: 2, total: 2}),
+                Some(Uses { use_method: UseMethod::Single, remaining: 1, total: 1}),
                 None
             ),
             account_info.as_slice(),
@@ -146,14 +146,14 @@ pub mod ticketcoin_contract {
     ) -> Result<()> {
         msg!("Initializing Mint Ticket");
 
-        /*let authority_info = vec![
+        let authority_info = vec![
             ctx.accounts.metadata.to_account_info(),
             ctx.accounts.token_account.to_account_info(),
             ctx.accounts.mint.to_account_info(),
             ctx.accounts.verifier.to_account_info(),
             ctx.accounts.owner.to_account_info(),
             ctx.accounts.token_program.to_account_info(),
-            ctx.accounts.ata.to_account_info(),
+            ctx.accounts.ata_program.to_account_info(),
             ctx.accounts.system_program.to_account_info(),
             ctx.accounts.rent.to_account_info(),
             ctx.accounts.use_authority_record.to_account_info(),
@@ -172,7 +172,7 @@ pub mod ticketcoin_contract {
                 1
             ),
             authority_info.as_slice(),
-        )?;*/
+        )?;
 
         Ok(())
     }
@@ -222,29 +222,33 @@ pub struct MintNFT<'info> {
 
 #[derive(Accounts)]
 pub struct VerifyNFT<'info> {
-    #[account(mut)]
-    pub verifier: Signer<'info>,
-
-    /// CHECK: 
-    #[account(mut)]
-    pub owner: AccountInfo<'info>,
-
-    /// CHECK: This is not dangerous because we don't read or write from this account
-    #[account(mut)]
-    pub mint: UncheckedAccount<'info>,
-    // #[account(mut)]
-    pub token_program: Program<'info, Token>,
     /// CHECK: This is not dangerous because we don't read or write from this account
     #[account(mut)]
     pub metadata: UncheckedAccount<'info>,
     /// CHECK: This is not dangerous because we don't read or write from this account
     #[account(mut)]
     pub token_account: UncheckedAccount<'info>,
+
+
+    /// CHECK: This is not dangerous because we don't read or write from this account
+    #[account(mut)]
+    pub mint: UncheckedAccount<'info>,
+
+    #[account(mut)]
+    pub verifier: Signer<'info>,
+
+
+    /// CHECK: 
+    pub owner: AccountInfo<'info>,
+
+
+    // #[account(mut)]
+    pub token_program: Program<'info, Token>,
     /// CHECK: This is not dangerous because we don't read or write from this account
     pub token_metadata_program: UncheckedAccount<'info>,
     
     /// CHECK: This is not dangerous because we don't read or write from this account
-    pub ata: UncheckedAccount<'info>,
+    pub ata_program: UncheckedAccount<'info>,
 
     /// CHECK: This is not dangerous because we don't read or write from this account
     pub system_program: Program<'info, System>,
@@ -254,8 +258,6 @@ pub struct VerifyNFT<'info> {
     /// CHECK: To avoid error
     #[account(mut)]
     pub use_authority_record: AccountInfo<'info>,
-
     /// CHECK: To avoid error
-    #[account(mut)]
     pub burner: AccountInfo<'info>,
 }
