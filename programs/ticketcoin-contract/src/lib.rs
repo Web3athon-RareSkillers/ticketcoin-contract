@@ -1,8 +1,8 @@
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::program::invoke;
-use anchor_spl::token;
+use anchor_spl::token::{self, TokenAccount, Mint};
 use anchor_spl::token::{MintTo, Token};
-use mpl_token_metadata::{instruction::{create_master_edition_v3, create_metadata_accounts_v3, approve_use_authority, utilize}, state::{Uses, UseMethod, Collection}};
+use mpl_token_metadata::{instruction::{create_master_edition_v3, create_metadata_accounts_v3, approve_use_authority, utilize}, state::{Uses, UseMethod, Collection, Metadata}};
 
 declare_id!("69YpUBXmA97Lhjy21Wm4chkzkbh4SjwAFaHfNnNr8iJv");
 
@@ -149,7 +149,26 @@ pub mod ticketcoin_contract {
     pub fn verify_nft(
         ctx: Context<VerifyNFT>,
     ) -> Result<()> {
-        // Verify ticket HERE
+        // Verify ticket HERE        
+        let nft_token_account = &ctx.accounts.token_account;
+        let nft_mint_account = &ctx.accounts.mint;
+
+
+        // Check that owner in arguments is real owner
+        assert_eq!(ctx.accounts.owner.key(), nft_token_account.owner);
+
+        // Check the mint on the token account
+        assert_eq!(nft_mint_account.key(), nft_token_account.mint);
+        
+        // Check amount on the token account
+        assert_eq!(nft_token_account.amount, 1);
+
+        //let NFTmetadata = Metadata::from_account_info(ctx.accounts.metadata
+        /*let NFTmetadata = Metadata::deserialize(ctx.accounts.metadata.data.into());
+        if NFTmetadata.is_mutable {
+            return Err(Error::ProgramError("NFT is mutable..."))
+        }*/
+
         
 
 
@@ -242,15 +261,15 @@ pub struct MintNFT<'info> {
 pub struct VerifyNFT<'info> {
     /// CHECK: This is not dangerous because we don't read or write from this account
     #[account(mut)]
-    pub metadata: UncheckedAccount<'info>,
+    pub metadata: AccountInfo<'info>,
     /// CHECK: This is not dangerous because we don't read or write from this account
     #[account(mut)]
-    pub token_account: UncheckedAccount<'info>,
+    pub token_account: Account<'info, TokenAccount>,
 
 
     /// CHECK: This is not dangerous because we don't read or write from this account
     #[account(mut)]
-    pub mint: UncheckedAccount<'info>,
+    pub mint: Account<'info, Mint>,
 
     #[account(mut)]
     pub verifier: Signer<'info>,
