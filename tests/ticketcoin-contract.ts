@@ -1,9 +1,10 @@
 import * as anchor from "@coral-xyz/anchor";
 import { Program, Wallet } from "@coral-xyz/anchor";
 import { TicketcoinContract } from "../target/types/ticketcoin_contract";
-import { TOKEN_PROGRAM_ID, createAssociatedTokenAccountInstruction, getAssociatedTokenAddress, createInitializeMintInstruction, MINT_SIZE } from '@solana/spl-token' // IGNORE THESE ERRORS IF ANY
-import { Metadata } from "@metaplex-foundation/mpl-token-metadata";
-const { SystemProgram } = anchor.web3
+import { TOKEN_PROGRAM_ID, createAssociatedTokenAccountInstruction, getAssociatedTokenAddress, createInitializeMintInstruction, MINT_SIZE, mintTo, mintToInstructionData, createMint } from '@solana/spl-token' // IGNORE THESE ERRORS IF ANY
+import { Metadata, createCreateMetadataAccountV3Instruction } from "@metaplex-foundation/mpl-token-metadata";
+const { SystemProgram } = anchor.web3;
+import { keypairIdentity, Metaplex } from '@metaplex-foundation/js';
 
 
 
@@ -97,8 +98,44 @@ describe("ticketcoin-contract", () => {
     // private Key of the verifier
     const verifierKey: anchor.web3.Keypair = anchor.web3.Keypair.fromSecretKey(
       Uint8Array.from([101,14,176,133,137,147,99,228,239,38,213,73,217,54,202,27,19,192,49,152,95,155,11,157,206,125,120,114,232,66,178,200,160,30,158,23,36,46,127,141,85,130,181,111,247,17,147,61,228,144,171,230,158,67,136,167,142,128,152,222,162,31,103,173])
-      );
+    );
 
+    // private Key of the collection authority
+    const collectionAuthorityKey: anchor.web3.Keypair = anchor.web3.Keypair.fromSecretKey(
+      Uint8Array.from([100,218,28,88,90,31,202,200,105,72,96,24,31,246,50,57,151,60,149,141,43,223,167,143,28,2,94,104,234,179,102,114,145,1,117,91,193,118,183,70,160,142,139,28,243,129,103,12,62,181,184,220,153,179,13,231,90,58,192,49,154,207,241,139])
+    );
+
+    //////////////////////////////////////////////
+    //           1 - COLLECTION  PART           //
+    //////////////////////////////////////////////
+    console.log("//////////////////////////////////////////////");
+    console.log("//           1 - COLLECTION  PART           //");
+    console.log("//////////////////////////////////////////////");
+    // Should be run once
+    const metaplex = new Metaplex(provider.connection).use(keypairIdentity(collectionAuthorityKey));
+    // A metaplex NFT does the job for the NFT collection
+    const collectNFT = await metaplex.nfts().create({
+      name: "Ed Sheeran - Exclusive Concert",
+      sellerFeeBasisPoints: 0,
+      uri: "https://github.com/zigtur",
+      isMutable: false,
+      isCollection: true,
+    });
+
+    console.log("Collection NFT address: ", collectNFT.nft.address);
+    const collectNftPubKey = collectNFT.nft.address;
+
+    
+
+
+    //////////////////////////////////////////////
+    //          2 - NFT MINTING PART            //
+    //////////////////////////////////////////////
+    console.log("//////////////////////////////////////////////");
+    console.log("//          2 - NFT MINTING PART            //");
+    console.log("//////////////////////////////////////////////");
+    // Should be run once per user
+    
     const mintKey: anchor.web3.Keypair = anchor.web3.Keypair.generate();
     const NftTokenAccount = await getAssociatedTokenAddress(
       mintKey.publicKey,
@@ -129,34 +166,23 @@ describe("ticketcoin-contract", () => {
     );
 
     const res = await program.provider.sendAndConfirm(mint_tx, [mintKey]);
-    console.log(
+    /*console.log(
       await program.provider.connection.getParsedAccountInfo(mintKey.publicKey)
-    );
+    );*/
 
-    console.log("Account: ", res);
-    console.log("Mint key: ", mintKey.publicKey.toString());
-    console.log("User: ", wallet.publicKey.toString());
+    console.log("NFT Account: ", res);
+    //console.log("Mint key: ", mintKey.publicKey.toString());
+    //console.log("User: ", wallet.publicKey.toString());
 
     const metadataAddress = await getMetadata(mintKey.publicKey);
     const masterEdition = await getMasterEdition(mintKey.publicKey);
     const authorityRecord = await getUseAuthority(mintKey.publicKey, verifierKey.publicKey);
     const burnerAddress = await getBurner();
 
-    console.log("Metadata address: ", metadataAddress.toBase58());
-    console.log("MasterEdition: ", masterEdition.toBase58());
-    console.log("AuthorityRecord: ", authorityRecord.toBase58());
-    console.log("burner: ", burnerAddress.toBase58());
-
-    /*console.log(wallet.publicKey.toBase58());
-    console.log(mintKey.publicKey.toBase58());
-    console.log(NftTokenAccount.toBase58());
-    console.log(TOKEN_PROGRAM_ID.toBase58());
-    console.log(metadataAddress.toBase58());
-    console.log(TOKEN_METADATA_PROGRAM_ID.toBase58());
-    console.log(wallet.publicKey.toBase58());
-    console.log(SystemProgram.programId.toBase58());
-    console.log(anchor.web3.SYSVAR_RENT_PUBKEY.toBase58());
-    console.log(masterEdition.toBase58());*/
+    //console.log("Metadata address: ", metadataAddress.toBase58());
+    //console.log("MasterEdition: ", masterEdition.toBase58());
+    //console.log("AuthorityRecord: ", authorityRecord.toBase58());
+    //console.log("burner: ", burnerAddress.toBase58());
 
     const tx = await program.methods.mintNft(
       mintKey.publicKey,
@@ -165,6 +191,7 @@ describe("ticketcoin-contract", () => {
     )
       .accounts({
         mintAuthority: wallet.publicKey,
+        collection: collectNftPubKey,
         mint: mintKey.publicKey,
         tokenAccount: NftTokenAccount,
         tokenProgram: TOKEN_PROGRAM_ID,
@@ -180,10 +207,49 @@ describe("ticketcoin-contract", () => {
       },
       )
       .rpc();
-    console.log("Your transaction signature", tx);
-    console.log("Metadata of NFT: ", await Metadata.fromAccountAddress(provider.connection, metadataAddress));
+    //console.log("Your transaction signature", tx);
+    //console.log("Metadata of NFT: ", await Metadata.fromAccountAddress(provider.connection, metadataAddress));
+    console.log("Collection of NFT: ", (await Metadata.fromAccountAddress(provider.connection, metadataAddress)).collection);
     console.log("Uses of NFT: ", (await Metadata.fromAccountAddress(provider.connection, metadataAddress)).uses);
 
+    
+
+    // AIRDROP IF NEEDED
+    /*const txAirdrop = await program.provider.connection.requestAirdrop(
+      verifierKey.publicKey,
+      anchor.web3.LAMPORTS_PER_SOL * 1
+    );
+  
+    const latestBlockHash = await program.provider.connection.getLatestBlockhash();
+    await program.provider.connection.confirmTransaction({
+        blockhash: latestBlockHash.blockhash,
+        lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
+        signature: txAirdrop
+    });*/
+
+    //////////////////////////////////////////////
+    //       3 - NFT COLLECTION VERIFY          //
+    //////////////////////////////////////////////
+    console.log("//////////////////////////////////////////////");
+    console.log("//       3 - NFT COLLECTION VERIFY          //");
+    console.log("//////////////////////////////////////////////");
+    // Should be run once per user
+    
+    const collectionVerificationForNFT = await metaplex.nfts().verifyCollection({
+      mintAddress: mintKey.publicKey,
+      collectionMintAddress: collectNFT.mintAddress,
+      collectionAuthority: collectionAuthorityKey,
+    });
+    console.log("Collection of NFT: ", (await Metadata.fromAccountAddress(provider.connection, metadataAddress)).collection);
+
+
+    //////////////////////////////////////////////
+    //          4 - VERIFICATION PART           //
+    //////////////////////////////////////////////
+    console.log("//////////////////////////////////////////////");
+    console.log("//          4 - VERIFICATION PART           //");
+    console.log("//////////////////////////////////////////////");
+    
     // Verifier part
     const SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID: anchor.web3.PublicKey = new anchor.web3.PublicKey(
       'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL',
@@ -203,23 +269,9 @@ describe("ticketcoin-contract", () => {
         )[0];
     }
 
-
-    // AIRDROP IF NEEDED
-    /*const txAirdrop = await program.provider.connection.requestAirdrop(
-      verifierKey.publicKey,
-      anchor.web3.LAMPORTS_PER_SOL * 1
-    );
-  
-    const latestBlockHash = await program.provider.connection.getLatestBlockhash();
-    await program.provider.connection.confirmTransaction({
-        blockhash: latestBlockHash.blockhash,
-        lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
-        signature: txAirdrop
-    });*/
-
-
     const verifProgram = programPaidBy(verifierKey);
-    console.log("ATA address: ", findAssociatedTokenAddress(wallet.publicKey, mintKey.publicKey));
+    
+    //console.log("ATA address: ", findAssociatedTokenAddress(wallet.publicKey, mintKey.publicKey));
     const tx2 = await verifProgram.methods.verifyNft(
     )
       .accounts({
@@ -238,9 +290,9 @@ describe("ticketcoin-contract", () => {
       },
       )
       .rpc();
-    console.log("Your transaction signature", tx2);
-    console.log("Uses of NFT: ", (await Metadata.fromAccountAddress(provider.connection, metadataAddress)).uses);
-    
+    //console.log("Your transaction signature", tx2);
+    console.log("Uses of NFT after verifier verified it: ", (await Metadata.fromAccountAddress(provider.connection, metadataAddress)).uses);
+
 
   });
 });

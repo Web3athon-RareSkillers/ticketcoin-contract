@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 use anchor_lang::solana_program::program::invoke;
 use anchor_spl::token;
 use anchor_spl::token::{MintTo, Token};
-use mpl_token_metadata::{instruction::{create_master_edition_v3, create_metadata_accounts_v3, approve_use_authority, utilize}, state::{Uses, UseMethod}};
+use mpl_token_metadata::{instruction::{create_master_edition_v3, create_metadata_accounts_v3, approve_use_authority, utilize}, state::{Uses, UseMethod, Collection}};
 
 declare_id!("69YpUBXmA97Lhjy21Wm4chkzkbh4SjwAFaHfNnNr8iJv");
 
@@ -75,7 +75,7 @@ pub mod ticketcoin_contract {
                 0,
                 false,
                 false,
-                None,
+                Some(Collection { verified: false, key: ctx.accounts.collection.key() }),
                 Some(Uses { use_method: UseMethod::Single, remaining: 1, total: 1}),
                 None
             ),
@@ -150,6 +150,7 @@ pub mod ticketcoin_contract {
         ctx: Context<VerifyNFT>,
     ) -> Result<()> {
         // Verify ticket HERE
+        
 
 
 
@@ -195,6 +196,10 @@ pub mod ticketcoin_contract {
 pub struct MintNFT<'info> {
     #[account(mut)]
     pub mint_authority: Signer<'info>,
+    
+    /// CHECK: To check later
+    #[account(mut)]
+    pub collection: AccountInfo<'info>,
 
     /// CHECK: This is not dangerous because we don't read or write from this account
     #[account(mut)]
